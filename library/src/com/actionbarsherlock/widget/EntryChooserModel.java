@@ -19,8 +19,10 @@ package com.actionbarsherlock.widget;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.DataSetObservable;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
@@ -34,13 +36,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -49,9 +52,10 @@ import java.util.concurrent.Executors;
  * This class represents a data model for choosing a component for handing a
  * given {@link Intent}. The model is responsible for querying the system for
  * activities that can handle the given intent and order found activities
- * based on historical data of previous choices. The historical data is stored
+ * based on historical data of previous choices. The model also allows custom entries
+ * to be included alongside the resolved activities. The historical data is stored
  * in an application private file. If a client does not want to have persistent
- * choice history the file can be omitted, thus the activities will be ordered
+ * choice history the file can be omitted, thus the entries will be ordered
  * based on historical usage for the current session.
  * <p>
  * </p>
@@ -72,14 +76,14 @@ import java.util.concurrent.Executors;
  * <pre>
  * <code>
  *  // Get a model and set it to a couple of clients with semantically similar function.
- *  ActivityChooserModel dataModel =
- *      ActivityChooserModel.get(context, "task_specific_history_file_name.xml");
+ *  EntryChooserModel dataModel =
+ *      EntryChooserModel.get(context, "task_specific_history_file_name.xml");
  *
- *  ActivityChooserModelClient modelClient1 = getActivityChooserModelClient1();
- *  modelClient1.setActivityChooserModel(dataModel);
+ *  EntryChooserModelClient modelClient1 = getActivityChooserModelClient1();
+ *  modelClient1.setEntryChooserModel(dataModel);
  *
- *  ActivityChooserModelClient modelClient2 = getActivityChooserModelClient2();
- *  modelClient2.setActivityChooserModel(dataModel);
+ *  EntryChooserModelClient modelClient2 = getActivityChooserModelClient2();
+ *  modelClient2.setEntryChooserModel(dataModel);
  *
  *  // Set an intent to choose a an activity for.
  *  dataModel.setIntent(intent);
@@ -92,50 +96,54 @@ import java.util.concurrent.Executors;
  *
  * @hide
  */
-class ActivityChooserModel extends DataSetObservable {
+class EntryChooserModel extends DataSetObservable {
+
 
     /**
-     * Client that utilizes an {@link ActivityChooserModel}.
+     * Client that utilizes an {@link EntryChooserModel}.
      */
-    public interface ActivityChooserModelClient {
+    public interface EntryChooserModelClient
+    {
 
         /**
-         * Sets the {@link ActivityChooserModel}.
+         * Sets the {@link EntryChooserModel}.
          *
          * @param dataModel The model.
          */
-        public void setActivityChooserModel(ActivityChooserModel dataModel);
+        public void setEntryChooserModel(EntryChooserModel dataModel);
     }
 
     /**
-     * Defines a sorter that is responsible for sorting the activities
+     * Defines a sorter that is responsible for sorting the entries
      * based on the provided historical choices and an intent.
      */
-    public interface ActivitySorter {
+    public interface EntrySorter
+    {
 
         /**
-         * Sorts the <code>activities</code> in descending order of relevance
+         * Sorts the <code>entries</code> in descending order of relevance
          * based on previous history and an intent.
          *
          * @param intent The {@link Intent}.
-         * @param activities Activities to be sorted.
+         * @param entries Entries to be sorted.
          * @param historicalRecords Historical records.
          */
-        // This cannot be done by a simple comparator since an Activity weight
-        // is computed from history. Note that Activity implements Comparable.
-        public void sort(Intent intent, List<ActivityResolveInfo> activities,
+        // This cannot be done by a simple comparator since an Entry weight
+        // is computed from history. Note that Entry implements Comparable.
+        public void sort(Intent intent, List<Entry> entries,
                 List<HistoricalRecord> historicalRecords);
     }
 
     /**
-     * Listener for choosing an activity.
+     * Listener for choosing an entry.
      */
-    public interface OnChooseActivityListener {
+    public interface OnChooseEntryListener
+    {
 
         /**
-         * Called when an activity has been chosen. The client can decide whether
-         * an activity can be chosen and if so the caller of
-         * {@link ActivityChooserModel#chooseActivity(int)} will receive and {@link Intent}
+         * Called when an entry has been chosen. The client can decide whether
+         * an entry can be chosen and if so the caller of
+         * {@link EntryChooserModel#chooseEntry} will receive and {@link Intent}
          * for launching it.
          * <p>
          * <strong>Note:</strong> Modifying the intent is not permitted and
@@ -143,12 +151,12 @@ class ActivityChooserModel extends DataSetObservable {
          * </p>
          *
          * @param host The listener's host model.
-         * @param intent The intent for launching the chosen activity.
+         * @param intent The intent for launching the chosen entry.
          * @return Whether the intent is handled and should not be delivered to clients.
          *
-         * @see ActivityChooserModel#chooseActivity(int)
+         * @see EntryChooserModel#chooseEntry
          */
-        public boolean onChooseActivity(ActivityChooserModel host, Intent intent);
+        public boolean onChooseEntry(EntryChooserModel host, Intent intent);
     }
 
     /**
@@ -159,7 +167,7 @@ class ActivityChooserModel extends DataSetObservable {
     /**
      * Tag used for logging.
      */
-    private static final String LOG_TAG = ActivityChooserModel.class.getSimpleName();
+    private static final String LOG_TAG = EntryChooserModel.class.getSimpleName();
 
     /**
      * The root tag in the history file.
@@ -172,9 +180,9 @@ class ActivityChooserModel extends DataSetObservable {
     private static final String TAG_HISTORICAL_RECORD = "historical-record";
 
     /**
-     * Attribute for the activity.
+     * Attribute for the entry id.
      */
-    private static final String ATTRIBUTE_ACTIVITY = "activity";
+    private static final String ATTRIBUTE_ENTRY_IDENTIFIER = "entry-id";
 
     /**
      * Attribute for the choice time.
@@ -190,7 +198,7 @@ class ActivityChooserModel extends DataSetObservable {
      * The default name of the choice history file.
      */
     public static final String DEFAULT_HISTORY_FILE_NAME =
-        "activity_choser_model_history.xml";
+        "entry_choser_model_history.xml";
 
     /**
      * The default maximal length of the choice history.
@@ -198,9 +206,9 @@ class ActivityChooserModel extends DataSetObservable {
     public static final int DEFAULT_HISTORY_MAX_LENGTH = 50;
 
     /**
-     * The amount with which to inflate a chosen activity when set as default.
+     * The amount with which to inflate a chosen entry when set as default.
      */
-    private static final int DEFAULT_ACTIVITY_INFLATION = 5;
+    private static final int DEFAULT_ENTRY_INFLATION = 5;
 
     /**
      * Default weight for a choice record.
@@ -225,8 +233,8 @@ class ActivityChooserModel extends DataSetObservable {
     /**
      * This the registry for data models.
      */
-    private static final Map<String, ActivityChooserModel> sDataModelRegistry =
-        new HashMap<String, ActivityChooserModel>();
+    private static final Map<String, EntryChooserModel> sDataModelRegistry =
+        new HashMap<String, EntryChooserModel>();
 
     /**
      * Lock for synchronizing on this instance.
@@ -234,9 +242,9 @@ class ActivityChooserModel extends DataSetObservable {
     private final Object mInstanceLock = new Object();
 
     /**
-     * List of activities that can handle the current intent.
+     * List of entries that will be displayed.
      */
-    private final List<ActivityResolveInfo> mActivites = new ArrayList<ActivityResolveInfo>();
+    private final List<Entry> mEntries = new ArrayList<Entry>();
 
     /**
      * List with historical choice records.
@@ -259,9 +267,9 @@ class ActivityChooserModel extends DataSetObservable {
     private Intent mIntent;
 
     /**
-     * The sorter for ordering activities based on intent and past choices.
+     * The sorter for ordering entries based on intent and past choices.
      */
-    private ActivitySorter mActivitySorter = new DefaultSorter();
+    private EntrySorter mEntrySorter = new DefaultSorter();
 
     /**
      * The maximal length of the choice history.
@@ -303,9 +311,12 @@ class ActivityChooserModel extends DataSetObservable {
     private final Handler mHandler = new Handler();
 
     /**
-     * Policy for controlling how the model handles chosen activities.
+     * Policy for controlling how the model handles chosen entries.
      */
-    private OnChooseActivityListener mActivityChoserModelPolicy;
+    private OnChooseEntryListener mEntryChoserModelPolicy;
+
+    private final List<Entry> prependedEntries = new ArrayList<Entry>();
+    private final List<Entry> additionalEntries = new ArrayList<Entry>();
 
     /**
      * Gets the data model backed by the contents of the provided file with historical data.
@@ -326,16 +337,16 @@ class ActivityChooserModel extends DataSetObservable {
      *
      * @param context Context for loading resources.
      * @param historyFileName File name with choice history, <code>null</code>
-     *        if the model should not be backed by a file. In this case the activities
+     *        if the model should not be backed by a file. In this case the entries
      *        will be ordered only by data from the current session.
      *
      * @return The model.
      */
-    public static ActivityChooserModel get(Context context, String historyFileName) {
+    public static EntryChooserModel get(Context context, String historyFileName) {
         synchronized (sRegistryLock) {
-            ActivityChooserModel dataModel = sDataModelRegistry.get(historyFileName);
+            EntryChooserModel dataModel = sDataModelRegistry.get(historyFileName);
             if (dataModel == null) {
-                dataModel = new ActivityChooserModel(context, historyFileName);
+                dataModel = new EntryChooserModel(context, historyFileName);
                 sDataModelRegistry.put(historyFileName, dataModel);
             }
             dataModel.readHistoricalData();
@@ -349,7 +360,7 @@ class ActivityChooserModel extends DataSetObservable {
      * @param context Context for loading resources.
      * @param historyFileName The history XML file.
      */
-    private ActivityChooserModel(Context context, String historyFileName) {
+    private EntryChooserModel(Context context, String historyFileName) {
         mContext = context.getApplicationContext();
         if (!TextUtils.isEmpty(historyFileName)
                 && !historyFileName.endsWith(HISTORY_FILE_EXTENSION)) {
@@ -360,7 +371,7 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Sets an intent for which to choose a activity.
+     * Sets an intent for which to choose an activity.
      * <p>
      * <strong>Note:</strong> Clients must set only semantically similar
      * intents for each data model.
@@ -374,12 +385,12 @@ class ActivityChooserModel extends DataSetObservable {
                 return;
             }
             mIntent = intent;
-            loadActivitiesLocked();
+            loadEntriesLocked();
         }
     }
 
     /**
-     * Gets the intent for which a activity is being chosen.
+     * Gets the intent for which an activity is being chosen.
      *
      * @return The intent.
      */
@@ -390,45 +401,82 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Gets the number of activities that can handle the intent.
+     * Allows custom entries to be added <strong>before</strong> the normal entries which are resolved via the share intent.<br />
+     * This method <strong>MUST</strong> be called before calling {@link EntryChooserModel#setIntent(android.content.Intent)}.</br>
+     * <strong>Note that this will clear any existing prepended entries set before.</strong>
+     * @param customEntries The entries to prepend.
+     */
+    public void setPrependedEntries(Entry... customEntries)
+    {
+        prependedEntries.clear();
+        prependedEntries.addAll(Arrays.asList(customEntries));
+    }
+
+	/**
+	  * Allows custom entries to be added alongside the normal entries which are resolved via the share intent.<br />
+	  * This method <strong>MUST</strong> be called before calling {@link ShareActionProvider#setShareIntent(android.content.Intent)}.</br>
+	  * <strong>Note that this will clear any existing additional entries set before.</strong>
+	  * @param customEntries The entries to add.
+	  */
+    public void setAdditionalEntries(Entry... customEntries)
+    {
+        additionalEntries.clear();
+        additionalEntries.addAll(Arrays.asList(customEntries));
+    }
+
+    /**
+     * Gets the total number of entries including custom ones.
+     *
+     * @return The entry count including custom entries.
+     *
+     * @see #setIntent(Intent) #appendCustomEntries #prependCustomEntries
+     */
+    public int getEntryCount() {
+        synchronized (mInstanceLock) {
+            return mEntries.size();
+        }
+    }
+
+    /**
+     * Gets the number of activities that can handle the intent. (the entries without the custom ones)
      *
      * @return The activity count.
      *
      * @see #setIntent(Intent)
      */
-    public int getActivityCount() {
+    public int getResolvedActivitiesEntryCount() {
         synchronized (mInstanceLock) {
-            return mActivites.size();
+            return mEntries.size() - prependedEntries.size() - additionalEntries.size();
         }
     }
 
     /**
-     * Gets an activity at a given index.
+     * Gets an entry at a given index.
      *
-     * @return The activity.
+     * @return The entry.
      *
-     * @see ActivityResolveInfo
+     * @see Entry
      * @see #setIntent(Intent)
      */
-    public ResolveInfo getActivity(int index) {
+    public Entry getEntry(int index) {
         synchronized (mInstanceLock) {
-            return mActivites.get(index).resolveInfo;
+            return mEntries.get(index);
         }
     }
 
     /**
-     * Gets the index of a the given activity.
+     * Gets the index of a the given entry.
      *
-     * @param activity The activity index.
+     * @param entry The entry index.
      *
      * @return The index if found, -1 otherwise.
      */
-    public int getActivityIndex(ResolveInfo activity) {
-        List<ActivityResolveInfo> activities = mActivites;
-        final int activityCount = activities.size();
-        for (int i = 0; i < activityCount; i++) {
-            ActivityResolveInfo currentActivity = activities.get(i);
-            if (currentActivity.resolveInfo == activity) {
+    public int getEntryIndex(Entry entry) {
+        List<Entry> entries = mEntries;
+        final int entryCount = entries.size();
+        for (int i = 0; i < entryCount; i++) {
+            Entry currentEntry = entries.get(i);
+            if (currentEntry.equals(entry)) {
                 return i;
             }
         }
@@ -436,7 +484,7 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Chooses a activity to handle the current intent. This will result in
+     * Chooses an entry to handle the current intent. This will result in
      * adding a historical record for that action and construct intent with
      * its component name set such that it can be immediately started by the
      * client.
@@ -446,33 +494,29 @@ class ActivityChooserModel extends DataSetObservable {
      * the client solely to let additional customization before the start.
      * </p>
      *
-     * @return An {@link Intent} for launching the activity or null if the
+     * @return An {@link Intent} for launching the entry or null if the
      *         policy has consumed the intent.
      *
      * @see HistoricalRecord
-     * @see OnChooseActivityListener
+     * @see EntryChooserModel.OnChooseEntryListener
      */
-    public Intent chooseActivity(int index) {
-        ActivityResolveInfo chosenActivity = mActivites.get(index);
+    public Intent chooseEntry(int index) {
+        Entry chosenEntry = mEntries.get(index);
 
-        ComponentName chosenName = new ComponentName(
-                chosenActivity.resolveInfo.activityInfo.packageName,
-                chosenActivity.resolveInfo.activityInfo.name);
 
-        Intent choiceIntent = new Intent(mIntent);
-        choiceIntent.setComponent(chosenName);
+        Intent choiceIntent = chosenEntry.getIntent();
 
-        if (mActivityChoserModelPolicy != null) {
+        if (mEntryChoserModelPolicy != null) {
             // Do not allow the policy to change the intent.
             Intent choiceIntentCopy = new Intent(choiceIntent);
-            final boolean handled = mActivityChoserModelPolicy.onChooseActivity(this,
+            final boolean handled = mEntryChoserModelPolicy.onChooseEntry(this,
                     choiceIntentCopy);
             if (handled) {
                 return null;
             }
         }
 
-        HistoricalRecord historicalRecord = new HistoricalRecord(chosenName,
+        HistoricalRecord historicalRecord = new HistoricalRecord(chosenEntry.getIdentifier(),
                 System.currentTimeMillis(), DEFAULT_HISTORICAL_RECORD_WEIGHT);
         addHisoricalRecord(historicalRecord);
 
@@ -480,59 +524,56 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Sets the listener for choosing an activity.
+     * Sets the listener for choosing an entry.
      *
      * @param listener The listener.
      */
-    public void setOnChooseActivityListener(OnChooseActivityListener listener) {
-        mActivityChoserModelPolicy = listener;
+    public void setOnChooseEntryListener(OnChooseEntryListener listener) {
+        mEntryChoserModelPolicy = listener;
     }
 
     /**
-     * Gets the default activity, The default activity is defined as the one
-     * with highest rank i.e. the first one in the list of activities that can
+     * Gets the default entry, The default entry is defined as the one
+     * with highest rank i.e. the first one in the list of entries that can
      * handle the intent.
      *
-     * @return The default activity, <code>null</code> id not activities.
+     * @return The default entry, <code>null</code> id not entries.
      *
-     * @see #getActivity(int)
+     * @see #getEntry
      */
-    public ResolveInfo getDefaultActivity() {
+    public Entry getDefaultEntry() {
         synchronized (mInstanceLock) {
-            if (!mActivites.isEmpty()) {
-                return mActivites.get(0).resolveInfo;
+            if (!mEntries.isEmpty()) {
+                return mEntries.get(0);
             }
         }
         return null;
     }
 
     /**
-     * Sets the default activity. The default activity is set by adding a
-     * historical record with weight high enough that this activity will
+     * Sets the default entry. The default entry is set by adding a
+     * historical record with weight high enough that this entry will
      * become the highest ranked. Such a strategy guarantees that the default
      * will eventually change if not used. Also the weight of the record for
      * setting a default is inflated with a constant amount to guarantee that
      * it will stay as default for awhile.
      *
-     * @param index The index of the activity to set as default.
+     * @param index The index of the entry to set as default.
      */
-    public void setDefaultActivity(int index) {
-        ActivityResolveInfo newDefaultActivity = mActivites.get(index);
-        ActivityResolveInfo oldDefaultActivity = mActivites.get(0);
+    public void setDefaultEntry(int index) {
+        Entry newDefaultEntry = mEntries.get(index);
+        Entry oldDefaultEntry = mEntries.get(0);
 
         final float weight;
-        if (oldDefaultActivity != null) {
+        if (oldDefaultEntry != null) {
             // Add a record with weight enough to boost the chosen at the top.
-            weight = oldDefaultActivity.weight - newDefaultActivity.weight
-                + DEFAULT_ACTIVITY_INFLATION;
+            weight = oldDefaultEntry.getWeight() - newDefaultEntry.getWeight()
+                + DEFAULT_ENTRY_INFLATION;
         } else {
             weight = DEFAULT_HISTORICAL_RECORD_WEIGHT;
         }
 
-        ComponentName defaultName = new ComponentName(
-                newDefaultActivity.resolveInfo.activityInfo.packageName,
-                newDefaultActivity.resolveInfo.activityInfo.name);
-        HistoricalRecord historicalRecord = new HistoricalRecord(defaultName,
+        HistoricalRecord historicalRecord = new HistoricalRecord(newDefaultEntry.getIdentifier(),
                 System.currentTimeMillis(), weight);
         addHisoricalRecord(historicalRecord);
     }
@@ -544,7 +585,7 @@ class ActivityChooserModel extends DataSetObservable {
      * <p>
      * <strong>Note:</strong> Historical data is read asynchronously and
      *       as soon as the reading is completed any registered
-     *       {@link DataSetObserver}s will be notified. Also no historical
+     *       {@link android.database.DataSetObserver}s will be notified. Also no historical
      *       data is read until this method is invoked.
      * <p>
      */
@@ -567,7 +608,7 @@ class ActivityChooserModel extends DataSetObservable {
      * Persists the history data to the backing file if the latter
      * was provided. Calling this method before a call to {@link #readHistoricalData()}
      * throws an exception. Calling this method more than one without choosing an
-     * activity has not effect.
+     * entry has not effect.
      *
      * @throws IllegalStateException If this method is called before a call to
      *         {@link #readHistoricalData()}.
@@ -589,32 +630,32 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Sets the sorter for ordering activities based on historical data and an intent.
+     * Sets the sorter for ordering entries based on historical data and an intent.
      *
-     * @param activitySorter The sorter.
+     * @param entrySorter The sorter.
      *
-     * @see ActivitySorter
+     * @see EntryChooserModel.EntrySorter
      */
-    public void setActivitySorter(ActivitySorter activitySorter) {
+    public void setEntrySorter(EntrySorter entrySorter) {
         synchronized (mInstanceLock) {
-            if (mActivitySorter == activitySorter) {
+            if (mEntrySorter == entrySorter) {
                 return;
             }
-            mActivitySorter = activitySorter;
-            sortActivities();
+            mEntrySorter = entrySorter;
+            sortEntries();
         }
     }
 
     /**
-     * Sorts the activities based on history and an intent. If
-     * a sorter is not specified this a default implementation is used.
+     * Sorts the entries based on history and an intent. If
+     * a sorter is not specified, then a default implementation is used.
      *
-     * @see #setActivitySorter(ActivitySorter)
+     * @see #setEntrySorter
      */
-    private void sortActivities() {
+    private void sortEntries() {
         synchronized (mInstanceLock) {
-            if (mActivitySorter != null && !mActivites.isEmpty()) {
-                mActivitySorter.sort(mIntent, mActivites,
+            if (mEntrySorter != null && !mEntries.isEmpty()) {
+                mEntrySorter.sort(mIntent, mEntries,
                         Collections.unmodifiableList(mHistoricalRecords));
                 notifyChanged();
             }
@@ -641,7 +682,7 @@ class ActivityChooserModel extends DataSetObservable {
             }
             mHistoryMaxSize = historyMaxSize;
             pruneExcessiveHistoricalRecordsLocked();
-            sortActivities();
+            sortEntries();
         }
     }
 
@@ -680,7 +721,7 @@ class ActivityChooserModel extends DataSetObservable {
                 mHistoricalRecordsChanged = true;
                 pruneExcessiveHistoricalRecordsLocked();
                 persistHistoricalData();
-                sortActivities();
+                sortEntries();
             }
             return added;
         }
@@ -705,21 +746,33 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Loads the activities.
+     * Loads the entries.
      */
-    private void loadActivitiesLocked() {
-        mActivites.clear();
+    private void loadEntriesLocked() {
+        mEntries.clear();
+        if (!prependedEntries.isEmpty()) {
+            for (Entry prependedEntry : prependedEntries) {
+                mEntries.add(prependedEntry);
+            }
+        }
         if (mIntent != null) {
             List<ResolveInfo> resolveInfos =
                 mContext.getPackageManager().queryIntentActivities(mIntent, 0);
             final int resolveInfoCount = resolveInfos.size();
             for (int i = 0; i < resolveInfoCount; i++) {
                 ResolveInfo resolveInfo = resolveInfos.get(i);
-                mActivites.add(new ActivityResolveInfo(resolveInfo));
+                mEntries.add(new ActivityResolveInfo(resolveInfo, mContext.getPackageManager()));
             }
-            sortActivities();
-        } else {
+        }
+        if (!additionalEntries.isEmpty()) {
+            for (Entry appendedEntry : additionalEntries) {
+                mEntries.add(appendedEntry);
+            }
+        }
+        if (mEntries.isEmpty()) {
             notifyChanged();
+        } else {
+            sortEntries();
         }
     }
 
@@ -729,9 +782,9 @@ class ActivityChooserModel extends DataSetObservable {
     public final static class HistoricalRecord {
 
         /**
-         * The activity name.
+         * A unique identifier for the entry.
          */
-        public final ComponentName activity;
+        public final String uniqueIdentifier;
 
         /**
          * The choice time.
@@ -746,23 +799,12 @@ class ActivityChooserModel extends DataSetObservable {
         /**
          * Creates a new instance.
          *
-         * @param activityName The activity component name flattened to string.
-         * @param time The time the activity was chosen.
+         * @param uniqueIdentifier A unique identifier for the entry.
+         * @param time The time the entry was chosen.
          * @param weight The weight of the record.
          */
-        public HistoricalRecord(String activityName, long time, float weight) {
-            this(ComponentName.unflattenFromString(activityName), time, weight);
-        }
-
-        /**
-         * Creates a new instance.
-         *
-         * @param activityName The activity name.
-         * @param time The time the activity was chosen.
-         * @param weight The weight of the record.
-         */
-        public HistoricalRecord(ComponentName activityName, long time, float weight) {
-            this.activity = activityName;
+        public HistoricalRecord(String uniqueIdentifier, long time, float weight) {
+            this.uniqueIdentifier = uniqueIdentifier;
             this.time = time;
             this.weight = weight;
         }
@@ -771,7 +813,7 @@ class ActivityChooserModel extends DataSetObservable {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((activity == null) ? 0 : activity.hashCode());
+            result = prime * result + ((uniqueIdentifier == null) ? 0 : uniqueIdentifier.hashCode());
             result = prime * result + (int) (time ^ (time >>> 32));
             result = prime * result + Float.floatToIntBits(weight);
             return result;
@@ -789,11 +831,11 @@ class ActivityChooserModel extends DataSetObservable {
                 return false;
             }
             HistoricalRecord other = (HistoricalRecord) obj;
-            if (activity == null) {
-                if (other.activity != null) {
+            if (uniqueIdentifier == null) {
+                if (other.uniqueIdentifier != null) {
                     return false;
                 }
-            } else if (!activity.equals(other.activity)) {
+            } else if (!uniqueIdentifier.equals(other.uniqueIdentifier)) {
                 return false;
             }
             if (time != other.time) {
@@ -809,7 +851,7 @@ class ActivityChooserModel extends DataSetObservable {
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("[");
-            builder.append("; activity:").append(activity);
+            builder.append("; uniqueIdentifier:").append(uniqueIdentifier);
             builder.append("; time:").append(time);
             builder.append("; weight:").append(new BigDecimal(weight));
             builder.append("]");
@@ -820,8 +862,7 @@ class ActivityChooserModel extends DataSetObservable {
     /**
      * Represents an activity.
      */
-    public final class ActivityResolveInfo implements Comparable<ActivityResolveInfo> {
-
+    public final class ActivityResolveInfo implements Entry {
         /**
          * The {@link ResolveInfo} of the activity.
          */
@@ -830,42 +871,82 @@ class ActivityChooserModel extends DataSetObservable {
         /**
          * Weight of the activity. Useful for sorting.
          */
-        public float weight;
+        private float weight;
+        private final CharSequence label;
+        private final Drawable icon;
+        private final EntryHasherAndComparator<ActivityResolveInfo> hasher;
+
+        public float getWeight()
+        {
+            return weight;
+        }
+
+        private ComponentName getComponentName()
+        {
+            return new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name);
+        }
+
+        public void setWeight(float weight)
+        {
+            this.weight = weight;
+        }
+
+        @Override
+        public String getIdentifier()
+        {
+            return resolveInfo.activityInfo.packageName;
+        }
+
+        @Override
+        public CharSequence getLabel()
+        {
+            return label;
+        }
+
+        @Override
+        public Drawable getIcon()
+        {
+            return icon;
+        }
+
+        @Override
+        public Intent getIntent()
+        {
+            Intent intent = new Intent(mIntent);
+            ComponentName chosenName = getComponentName();
+            intent.setComponent(chosenName);
+            return intent;
+        }
 
         /**
          * Creates a new instance.
          *
-         * @param resolveInfo activity {@link ResolveInfo}.
+         * @param resolveInfo activity {@link android.content.pm.ResolveInfo}.
+         * @param packageManager
          */
-        public ActivityResolveInfo(ResolveInfo resolveInfo) {
+        public ActivityResolveInfo(ResolveInfo resolveInfo, PackageManager packageManager) {
             this.resolveInfo = resolveInfo;
+            label = resolveInfo.loadLabel(packageManager);
+            icon = resolveInfo.loadIcon(packageManager);
+
+            hasher = new EntryHasherAndComparator<ActivityResolveInfo>(this);
         }
 
         @Override
         public int hashCode() {
-            return 31 + Float.floatToIntBits(weight);
+            return hasher.computeHashCode();
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            ActivityResolveInfo other = (ActivityResolveInfo) obj;
-            if (Float.floatToIntBits(weight) != Float.floatToIntBits(other.weight)) {
-                return false;
-            }
-            return true;
+           return hasher.isEqualTo(obj);
         }
 
-        public int compareTo(ActivityResolveInfo another) {
-             return  Float.floatToIntBits(another.weight) - Float.floatToIntBits(weight);
+
+        @Override
+        public int compareTo(Entry entry)
+        {
+            return hasher.compareToEntry(entry);
         }
 
         @Override
@@ -880,45 +961,69 @@ class ActivityChooserModel extends DataSetObservable {
     }
 
     /**
-     * Default activity sorter implementation.
+     * Default entry sorter implementation.
      */
-    private final class DefaultSorter implements ActivitySorter {
+    private final class DefaultSorter implements EntrySorter
+    {
         private static final float WEIGHT_DECAY_COEFFICIENT = 0.95f;
 
-        private final Map<String, ActivityResolveInfo> mPackageNameToActivityMap =
-            new HashMap<String, ActivityResolveInfo>();
+        private final Map<String, Entry> mUniqueIdToEntryMap =
+            new HashMap<String, Entry>();
 
-        public void sort(Intent intent, List<ActivityResolveInfo> activities,
+        public void sort(Intent intent, List<Entry> entries,
                 List<HistoricalRecord> historicalRecords) {
-            Map<String, ActivityResolveInfo> packageNameToActivityMap =
-                mPackageNameToActivityMap;
-            packageNameToActivityMap.clear();
+            Map<String, Entry> uniqueIdNameToEntryMap =
+                    mUniqueIdToEntryMap;
+            uniqueIdNameToEntryMap.clear();
 
-            final int activityCount = activities.size();
-            for (int i = 0; i < activityCount; i++) {
-                ActivityResolveInfo activity = activities.get(i);
-                activity.weight = 0.0f;
-                String packageName = activity.resolveInfo.activityInfo.packageName;
-                packageNameToActivityMap.put(packageName, activity);
+            final int entryCount = entries.size();
+            for (int i = 0; i < entryCount; i++) {
+                Entry entry = entries.get(i);
+                entry.setWeight(0.0f);
+                String packageName = entry.getIdentifier();
+                uniqueIdNameToEntryMap.put(packageName, entry);
             }
 
             final int lastShareIndex = historicalRecords.size() - 1;
             float nextRecordWeight = 1;
             for (int i = lastShareIndex; i >= 0; i--) {
                 HistoricalRecord historicalRecord = historicalRecords.get(i);
-                String packageName = historicalRecord.activity.getPackageName();
-                ActivityResolveInfo activity = packageNameToActivityMap.get(packageName);
-                if (activity != null) {
-                    activity.weight += historicalRecord.weight * nextRecordWeight;
+                String uniqueIdentifier = historicalRecord.uniqueIdentifier;
+                Entry entry = uniqueIdNameToEntryMap.get(uniqueIdentifier);
+                if (entry != null) {
+                    entry.setWeight(entry.getWeight() + historicalRecord.weight * nextRecordWeight);
                     nextRecordWeight = nextRecordWeight * WEIGHT_DECAY_COEFFICIENT;
                 }
             }
 
-            Collections.sort(activities);
+//            Collections.sort(entries);
+//            float largeWeight = Float.MAX_VALUE;
+//            Entry firstEntry = null;
+//            if (entries.size() > 0)
+//            {
+//                firstEntry = entries.get(0);
+//                firstEntry.setWeight(largeWeight);
+//                largeWeight--;
+//            }
+//            for (Entry prependedEntry : prependedEntries)
+//            {
+//                // yes, we need reference equality here. If it is the first entry, it will have already had its weight
+//                // set.
+//                if (prependedEntry != firstEntry)
+//                {
+//                    prependedEntry.setWeight(largeWeight);
+//                    largeWeight--;
+//                }
+//            }
+
+            entries.removeAll(prependedEntries);
+            float largestWeightOfNormalEntries = PrependedItemsOnTopComparator.findLargestWeightOf(entries);
+            entries.addAll(prependedEntries);
+            Collections.sort(entries, new PrependedItemsOnTopComparator(largestWeightOfNormalEntries, prependedEntries));
 
             if (DEBUG) {
-                for (int i = 0; i < activityCount; i++) {
-                    Log.i(LOG_TAG, "Sorted: " + activities.get(i));
+                for (int i = 0; i < entryCount; i++) {
+                    Log.i(LOG_TAG, "Sorted: " + entries.get(i));
                 }
             }
         }
@@ -968,13 +1073,13 @@ class ActivityChooserModel extends DataSetObservable {
                         throw new XmlPullParserException("Share records file not well-formed.");
                     }
 
-                    String activity = parser.getAttributeValue(null, ATTRIBUTE_ACTIVITY);
+                    String entryIdentifier = parser.getAttributeValue(null, ATTRIBUTE_ENTRY_IDENTIFIER);
                     final long time =
                         Long.parseLong(parser.getAttributeValue(null, ATTRIBUTE_TIME));
                     final float weight =
                         Float.parseFloat(parser.getAttributeValue(null, ATTRIBUTE_WEIGHT));
 
-                    HistoricalRecord readRecord = new HistoricalRecord(activity, time,
+                    HistoricalRecord readRecord = new HistoricalRecord(entryIdentifier, time,
                             weight);
                     readRecords.add(readRecord);
 
@@ -1018,7 +1123,7 @@ class ActivityChooserModel extends DataSetObservable {
                     mHandler.post(new Runnable() {
                         public void run() {
                             pruneExcessiveHistoricalRecordsLocked();
-                            sortActivities();
+                            sortEntries();
                         }
                     });
                 }
@@ -1069,7 +1174,7 @@ class ActivityChooserModel extends DataSetObservable {
                 for (int i = 0; i < recordCount; i++) {
                     HistoricalRecord record = records.remove(0);
                     serializer.startTag(null, TAG_HISTORICAL_RECORD);
-                    serializer.attribute(null, ATTRIBUTE_ACTIVITY, record.activity.flattenToString());
+                    serializer.attribute(null, ATTRIBUTE_ENTRY_IDENTIFIER, record.uniqueIdentifier);
                     serializer.attribute(null, ATTRIBUTE_TIME, String.valueOf(record.time));
                     serializer.attribute(null, ATTRIBUTE_WEIGHT, String.valueOf(record.weight));
                     serializer.endTag(null, TAG_HISTORICAL_RECORD);

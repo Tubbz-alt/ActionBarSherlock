@@ -19,7 +19,6 @@ package com.actionbarsherlock.widget;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.util.TypedValue;
 import android.view.View;
@@ -30,7 +29,6 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
 import com.actionbarsherlock.view.SubMenu;
-import com.actionbarsherlock.widget.ActivityChooserModel.OnChooseActivityListener;
 
 /**
  * This is a provider for a share action. It is responsible for creating views
@@ -127,7 +125,7 @@ public class ShareActionProvider extends ActionProvider {
 
     private OnShareTargetSelectedListener mOnShareTargetSelectedListener;
 
-    private OnChooseActivityListener mOnChooseActivityListener;
+    private EntryChooserModel.OnChooseEntryListener mOnChooseEntryListener;
 
     /**
      * Creates a new instance.
@@ -160,9 +158,9 @@ public class ShareActionProvider extends ActionProvider {
     @Override
     public View onCreateActionView() {
         // Create the view and set its data model.
-        ActivityChooserModel dataModel = ActivityChooserModel.get(mContext, mShareHistoryFileName);
-        ActivityChooserView activityChooserView = new ActivityChooserView(mContext);
-        activityChooserView.setActivityChooserModel(dataModel);
+        EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
+        EntryChooserView activityChooserView = new EntryChooserView(mContext);
+        activityChooserView.setEntryChooserModel(dataModel);
 
         // Lookup and set the expand action icon.
         TypedValue outTypedValue = new TypedValue();
@@ -196,17 +194,17 @@ public class ShareActionProvider extends ActionProvider {
         // Clear since the order of items may change.
         subMenu.clear();
 
-        ActivityChooserModel dataModel = ActivityChooserModel.get(mContext, mShareHistoryFileName);
+        EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
         PackageManager packageManager = mContext.getPackageManager();
 
-        final int expandedActivityCount = dataModel.getActivityCount();
+        final int expandedActivityCount = dataModel.getEntryCount();
         final int collapsedActivityCount = Math.min(expandedActivityCount, mMaxShownActivityCount);
 
         // Populate the sub-menu with a sub set of the activities.
         for (int i = 0; i < collapsedActivityCount; i++) {
-            ResolveInfo activity = dataModel.getActivity(i);
-            subMenu.add(0, i, i, activity.loadLabel(packageManager))
-                .setIcon(activity.loadIcon(packageManager))
+            Entry activity = dataModel.getEntry(i);
+            subMenu.add(0, i, i, activity.getLabel())
+                .setIcon(activity.getIcon())
                 .setOnMenuItemClickListener(mOnMenuItemClickListener);
         }
 
@@ -216,9 +214,9 @@ public class ShareActionProvider extends ActionProvider {
                     collapsedActivityCount,
                     mContext.getString(R.string.abs__activity_chooser_view_see_all));
             for (int i = 0; i < expandedActivityCount; i++) {
-                ResolveInfo activity = dataModel.getActivity(i);
-                expandedSubMenu.add(0, i, i, activity.loadLabel(packageManager))
-                    .setIcon(activity.loadIcon(packageManager))
+                Entry activity = dataModel.getEntry(i);
+                expandedSubMenu.add(0, i, i, activity.getLabel())
+                    .setIcon(activity.getIcon())
                     .setOnMenuItemClickListener(mOnMenuItemClickListener);
             }
         }
@@ -263,10 +261,35 @@ public class ShareActionProvider extends ActionProvider {
      * @see Intent#ACTION_SEND_MULTIPLE
      */
     public void setShareIntent(Intent shareIntent) {
-        ActivityChooserModel dataModel = ActivityChooserModel.get(mContext,
-            mShareHistoryFileName);
+        EntryChooserModel dataModel = EntryChooserModel.get(mContext,
+                mShareHistoryFileName);
         dataModel.setIntent(shareIntent);
     }
+
+    /**
+     * Allows custom entries to be added <strong>before</strong> the normal entries which are resolved via the share intent.<br />
+     * This method <strong>MUST</strong> be called before calling {@link ShareActionProvider#setShareIntent(android.content.Intent)}.</br>
+     * <strong>Note that this will clear any existing prepended entries set before.</strong>
+     * @param customEntries The entries to prepend.
+     */
+    public void setPrependedEntries(Entry... customEntries)
+    {
+        EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
+        dataModel.setPrependedEntries(customEntries);
+    }
+
+    /**
+     * Allows custom entries to be added alongside the normal entries which are resolved via the share intent.<br />
+     * This method <strong>MUST</strong> be called before calling {@link ShareActionProvider#setShareIntent(android.content.Intent)}.</br>
+     * <strong>Note that this will clear any existing additional entries set before.</strong>
+     * @param customEntries The entries to add.
+     */
+    public void setAdditionalEntries(Entry... customEntries)
+    {
+        EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
+        dataModel.setAdditionalEntries(customEntries);
+    }
+
 
     /**
      * Reusable listener for handling share item clicks.
@@ -274,10 +297,10 @@ public class ShareActionProvider extends ActionProvider {
     private class ShareMenuItemOnMenuItemClickListener implements OnMenuItemClickListener {
         @Override
         public boolean onMenuItemClick(MenuItem item) {
-            ActivityChooserModel dataModel = ActivityChooserModel.get(mContext,
+            EntryChooserModel dataModel = EntryChooserModel.get(mContext,
                     mShareHistoryFileName);
             final int itemId = item.getItemId();
-            Intent launchIntent = dataModel.chooseActivity(itemId);
+            Intent launchIntent = dataModel.chooseEntry(itemId);
             if (launchIntent != null) {
                 mContext.startActivity(launchIntent);
             }
@@ -293,19 +316,20 @@ public class ShareActionProvider extends ActionProvider {
         if (mOnShareTargetSelectedListener == null) {
             return;
         }
-        if (mOnChooseActivityListener == null) {
-            mOnChooseActivityListener = new ShareAcitivityChooserModelPolicy();
+        if (mOnChooseEntryListener == null) {
+            mOnChooseEntryListener = new ShareAcitivityChooserModelPolicy();
         }
-        ActivityChooserModel dataModel = ActivityChooserModel.get(mContext, mShareHistoryFileName);
-        dataModel.setOnChooseActivityListener(mOnChooseActivityListener);
+        EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
+        dataModel.setOnChooseEntryListener(mOnChooseEntryListener);
     }
 
     /**
      * Policy that delegates to the {@link OnShareTargetSelectedListener}, if such.
      */
-    private class ShareAcitivityChooserModelPolicy implements OnChooseActivityListener {
+    private class ShareAcitivityChooserModelPolicy implements EntryChooserModel.OnChooseEntryListener
+    {
         @Override
-        public boolean onChooseActivity(ActivityChooserModel host, Intent intent) {
+        public boolean onChooseEntry(EntryChooserModel host, Intent intent) {
             if (mOnShareTargetSelectedListener != null) {
                 return mOnShareTargetSelectedListener.onShareTargetSelected(
                         ShareActionProvider.this, intent);
