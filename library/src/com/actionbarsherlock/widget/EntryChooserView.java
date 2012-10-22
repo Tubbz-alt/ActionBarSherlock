@@ -21,11 +21,10 @@ import com.actionbarsherlock.R;
 import com.actionbarsherlock.internal.widget.IcsLinearLayout;
 import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
 import com.actionbarsherlock.view.ActionProvider;
-import com.actionbarsherlock.widget.ActivityChooserModel.ActivityChooserModelClient;
+import com.actionbarsherlock.widget.EntryChooserModel.EntryChooserModelClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.DataSetObserver;
@@ -66,7 +65,8 @@ import android.widget.TextView;
  *
  * @hide
  */
-class ActivityChooserView extends ViewGroup implements ActivityChooserModelClient {
+class EntryChooserView extends ViewGroup implements EntryChooserModelClient
+{
 
     /**
      * An adapter for displaying the activities in an {@link AdapterView}.
@@ -188,7 +188,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
      *
      * @param context The application environment.
      */
-    public ActivityChooserView(Context context) {
+    public EntryChooserView(Context context) {
         this(context, null);
     }
 
@@ -198,7 +198,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
      * @param context The application environment.
      * @param attrs A collection of attributes.
      */
-    public ActivityChooserView(Context context, AttributeSet attrs) {
+    public EntryChooserView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
@@ -209,7 +209,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
      * @param attrs A collection of attributes.
      * @param defStyle The default style to apply to this view.
      */
-    public ActivityChooserView(Context context, AttributeSet attrs, int defStyle) {
+    public EntryChooserView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         mContext = context;
 
@@ -261,7 +261,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
     /**
      * {@inheritDoc}
      */
-    public void setActivityChooserModel(ActivityChooserModel dataModel) {
+    public void setEntryChooserModel(EntryChooserModel dataModel) {
         mAdapter.setDataModel(dataModel);
         if (isShowingPopup()) {
             dismissPopup();
@@ -393,7 +393,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        ActivityChooserModel dataModel = mAdapter.getDataModel();
+        EntryChooserModel dataModel = mAdapter.getDataModel();
         if (dataModel != null) {
             dataModel.registerObserver(mModelDataSetOberver);
         }
@@ -403,7 +403,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        ActivityChooserModel dataModel = mAdapter.getDataModel();
+        EntryChooserModel dataModel = mAdapter.getDataModel();
         if (dataModel != null) {
             try {
                 dataModel.unregisterObserver(mModelDataSetOberver);
@@ -442,7 +442,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         }
     }
 
-    public ActivityChooserModel getDataModel() {
+    public EntryChooserModel getDataModel() {
         return mAdapter.getDataModel();
     }
 
@@ -490,7 +490,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         if (mListPopupWindow == null) {
             mListPopupWindow = new IcsListPopupWindow(getContext());
             mListPopupWindow.setAdapter(mAdapter);
-            mListPopupWindow.setAnchorView(ActivityChooserView.this);
+            mListPopupWindow.setAnchorView(EntryChooserView.this);
             mListPopupWindow.setModal(true);
             mListPopupWindow.setOnItemClickListener(mCallbacks);
             mListPopupWindow.setOnDismissListener(mCallbacks);
@@ -513,11 +513,11 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         final int historySize = mAdapter.getHistorySize();
         if (activityCount > 0 && historySize > 0) {
             mDefaultActivityButton.setVisibility(VISIBLE);
-            ResolveInfo activity = mAdapter.getDefaultActivity();
+            Entry activity = mAdapter.getDefaultActivity();
             PackageManager packageManager = mContext.getPackageManager();
-            mDefaultActivityButtonImage.setImageDrawable(activity.loadIcon(packageManager));
+            mDefaultActivityButtonImage.setImageDrawable(activity.getIcon());
             if (mDefaultActionButtonContentDescription != 0) {
-                CharSequence label = activity.loadLabel(packageManager);
+                CharSequence label = activity.getLabel();
                 String contentDescription = mContext.getString(
                         mDefaultActionButtonContentDescription, label);
                 mDefaultActivityButton.setContentDescription(contentDescription);
@@ -553,13 +553,13 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
                     if (mIsSelectingDefaultActivity) {
                         // The item at position zero is the default already.
                         if (position > 0) {
-                            mAdapter.getDataModel().setDefaultActivity(position);
+                            mAdapter.getDataModel().setDefaultEntry(position);
                         }
                     } else {
                         // If the default target is not shown in the list, the first
                         // item in the model is default action => adjust index
                         position = mAdapter.getShowDefaultActivity() ? position : position + 1;
-                        Intent launchIntent = mAdapter.getDataModel().chooseActivity(position);
+                        Intent launchIntent = mAdapter.getDataModel().chooseEntry(position);
                         if (launchIntent != null) {
                             mContext.startActivity(launchIntent);
                         }
@@ -574,9 +574,9 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         public void onClick(View view) {
             if (view == mDefaultActivityButton) {
                 dismissPopup();
-                ResolveInfo defaultActivity = mAdapter.getDefaultActivity();
-                final int index = mAdapter.getDataModel().getActivityIndex(defaultActivity);
-                Intent launchIntent = mAdapter.getDataModel().chooseActivity(index);
+                Entry defaultActivity = mAdapter.getDefaultActivity();
+                final int index = mAdapter.getDataModel().getEntryIndex(defaultActivity);
+                Intent launchIntent = mAdapter.getDataModel().chooseEntry(index);
                 if (launchIntent != null) {
                     mContext.startActivity(launchIntent);
                 }
@@ -640,7 +640,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
 
         private static final int ITEM_VIEW_TYPE_COUNT = 3;
 
-        private ActivityChooserModel mDataModel;
+        private EntryChooserModel mDataModel;
 
         private int mMaxActivityCount = MAX_ACTIVITY_COUNT_DEFAULT;
 
@@ -650,8 +650,8 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
 
         private boolean mShowFooterView;
 
-        public void setDataModel(ActivityChooserModel dataModel) {
-            ActivityChooserModel oldDataModel = mAdapter.getDataModel();
+        public void setDataModel(EntryChooserModel dataModel) {
+            EntryChooserModel oldDataModel = mAdapter.getDataModel();
             if (oldDataModel != null && isShown()) {
                 try {
                     oldDataModel.unregisterObserver(mModelDataSetOberver);
@@ -682,8 +682,8 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
 
         public int getCount() {
             int count = 0;
-            int activityCount = mDataModel.getActivityCount();
-            if (!mShowDefaultActivity && mDataModel.getDefaultActivity() != null) {
+            int activityCount = mDataModel.getEntryCount();
+            if (!mShowDefaultActivity && mDataModel.getDefaultEntry() != null) {
                 activityCount--;
             }
             count = Math.min(activityCount, mMaxActivityCount);
@@ -699,10 +699,10 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
                 case ITEM_VIEW_TYPE_FOOTER:
                     return null;
                 case ITEM_VIEW_TYPE_ACTIVITY:
-                    if (!mShowDefaultActivity && mDataModel.getDefaultActivity() != null) {
+                    if (!mShowDefaultActivity && mDataModel.getDefaultEntry() != null) {
                         position++;
                     }
-                    return mDataModel.getActivity(position);
+                    return mDataModel.getEntry(position);
                 default:
                     throw new IllegalArgumentException();
             }
@@ -733,11 +733,11 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
                     PackageManager packageManager = mContext.getPackageManager();
                     // Set the icon
                     ImageView iconView = (ImageView) convertView.findViewById(R.id.abs__icon);
-                    ResolveInfo activity = (ResolveInfo) getItem(position);
-                    iconView.setImageDrawable(activity.loadIcon(packageManager));
+                    Entry activity = (Entry) getItem(position);
+                    iconView.setImageDrawable(activity.getIcon());
                     // Set the title.
                     TextView titleView = (TextView) convertView.findViewById(R.id.abs__title);
-                    titleView.setText(activity.loadLabel(packageManager));
+                    titleView.setText(activity.getLabel());
                     if (IS_HONEYCOMB) {
                         // Highlight the default.
                         if (mShowDefaultActivity && position == 0 && mHighlightDefaultActivity) {
@@ -783,8 +783,8 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
             }
         }
 
-        public ResolveInfo getDefaultActivity() {
-            return mDataModel.getDefaultActivity();
+        public Entry getDefaultActivity() {
+            return mDataModel.getDefaultEntry();
         }
 
         public void setShowFooterView(boolean showFooterView) {
@@ -795,7 +795,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         }
 
         public int getActivityCount() {
-            return mDataModel.getActivityCount();
+            return mDataModel.getEntryCount();
         }
 
         public int getHistorySize() {
@@ -806,7 +806,7 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
             return mMaxActivityCount;
         }
 
-        public ActivityChooserModel getDataModel() {
+        public EntryChooserModel getDataModel() {
             return mDataModel;
         }
 
