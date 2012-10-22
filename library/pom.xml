@@ -8,8 +8,8 @@
 	<packaging>apklib</packaging>
 
 	<parent>
-		<groupId>com.shazam.actionbarsherlock</groupId>
-		<artifactId>parent</artifactId>
+		<groupId>com.shazam</groupId>
+		<artifactId>actionbarsherlock-parent</artifactId>
 		<version>4.2.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>

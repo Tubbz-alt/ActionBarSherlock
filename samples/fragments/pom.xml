@@ -8,7 +8,7 @@
 	<packaging>apk</packaging>
 
 	<parent>
-		<groupId>com.shazam.actionbarsherlock</groupId>
+		<groupId>com.shazam</groupId>
 		<artifactId>parent-sample</artifactId>
 		<version>4.2.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
@@ -22,7 +22,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.shazam.actionbarsherlock</groupId>
+			<groupId>com.shazam</groupId>
 			<artifactId>actionbarsherlock</artifactId>
 			<version>${project.version}</version>
 			<type>apklib</type>

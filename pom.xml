@@ -9,8 +9,8 @@
         <version>1</version>
     </parent>
 
-	<groupId>com.shazam.actionbarsherlock</groupId>
-	<artifactId>parent</artifactId>
+	<groupId>com.shazam</groupId>
+	<artifactId>actionbarsherlock-parent</artifactId>
 	<packaging>pom</packaging>
 	<version>4.2.1-SNAPSHOT</version>
 
@@ -68,7 +68,7 @@
 		<java.version>1.6</java.version>
 		<android.version>4.0.1.2</android.version>
 		<android.platform>14</android.platform>
-		<android-support.version>r7</android-support.version>
+		<android-support.version>r10</android-support.version>
 
 		<android-maven.version>3.3.2</android-maven.version>
 		<junit.version>4.10</junit.version>
