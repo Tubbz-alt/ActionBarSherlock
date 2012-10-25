@@ -412,12 +412,12 @@ class EntryChooserModel extends DataSetObservable {
         prependedEntries.addAll(Arrays.asList(customEntries));
     }
 
-	/**
-	  * Allows custom entries to be added alongside the normal entries which are resolved via the share intent.<br />
-	  * This method <strong>MUST</strong> be called before calling {@link ShareActionProvider#setShareIntent(android.content.Intent)}.</br>
-	  * <strong>Note that this will clear any existing additional entries set before.</strong>
-	  * @param customEntries The entries to add.
-	  */
+    /**
+      * Allows custom entries to be added alongside the normal entries which are resolved via the share intent.<br />
+      * This method <strong>MUST</strong> be called before calling {@link ShareActionProvider#setShareIntent(android.content.Intent)}.</br>
+      * <strong>Note that this will clear any existing additional entries set before.</strong>
+      * @param customEntries The entries to add.
+      */
     public void setAdditionalEntries(Entry... customEntries)
     {
         additionalEntries.clear();
