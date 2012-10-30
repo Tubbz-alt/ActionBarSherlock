@@ -15,22 +15,22 @@ public class EntryHasherAndComparator<T extends Entry> {
         return 31 + Float.floatToIntBits(entry.getWeight());
     }
 
-    public boolean isEqualTo(Object obj) {
-        if (entry == obj) {
+    public boolean isEqualTo(Object otherObj) {
+        if (entry == otherObj) {
             return true;
         }
-        if (obj == null) {
+        if (otherObj == null) {
             return false;
         }
-        if (!(obj instanceof Entry)) {
+        if (!(otherObj instanceof Entry)) {
             return false;
         }
-        Entry other = (Entry) obj;
-        if (!entry.getIdentifier().equals(other.getIdentifier()))
+        Entry otherEntry = (Entry) otherObj;
+        if (!entry.getIdentifier().equals(otherEntry.getIdentifier()))
         {
             return false;
         }
-        if (Float.floatToIntBits(entry.getWeight()) != Float.floatToIntBits(other.getWeight())) {
+        if (Float.floatToIntBits(entry.getWeight()) != Float.floatToIntBits(otherEntry.getWeight())) {
             return false;
         }
         return true;
