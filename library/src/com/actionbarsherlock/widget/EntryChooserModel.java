@@ -862,33 +862,18 @@ class EntryChooserModel extends DataSetObservable {
     /**
      * Represents an activity.
      */
-    public final class ActivityResolveInfo implements Entry {
+    public final class ActivityResolveInfo extends DefaultAbstractEntry {
         /**
          * The {@link ResolveInfo} of the activity.
          */
         public final ResolveInfo resolveInfo;
 
-        /**
-         * Weight of the activity. Useful for sorting.
-         */
-        private float weight;
         private final CharSequence label;
         private final Drawable icon;
-        private final EntryHasherAndComparator<ActivityResolveInfo> hasher;
-
-        public float getWeight()
-        {
-            return weight;
-        }
 
         private ComponentName getComponentName()
         {
             return new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name);
-        }
-
-        public void setWeight(float weight)
-        {
-            this.weight = weight;
         }
 
         @Override
@@ -928,25 +913,6 @@ class EntryChooserModel extends DataSetObservable {
             this.resolveInfo = resolveInfo;
             label = resolveInfo.loadLabel(packageManager);
             icon = resolveInfo.loadIcon(packageManager);
-
-            hasher = new EntryHasherAndComparator<ActivityResolveInfo>(this);
-        }
-
-        @Override
-        public int hashCode() {
-            return hasher.computeHashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-           return hasher.isEqualTo(obj);
-        }
-
-
-        @Override
-        public int compareTo(Entry entry)
-        {
-            return hasher.compareToEntry(entry);
         }
 
         @Override
@@ -954,7 +920,7 @@ class EntryChooserModel extends DataSetObservable {
             StringBuilder builder = new StringBuilder();
             builder.append("[");
             builder.append("resolveInfo:").append(resolveInfo.toString());
-            builder.append("; weight:").append(new BigDecimal(weight));
+            builder.append("; weight:").append(new BigDecimal(getWeight()));
             builder.append("]");
             return builder.toString();
         }
