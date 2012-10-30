@@ -202,10 +202,14 @@ public class ShareActionProvider extends ActionProvider {
 
         // Populate the sub-menu with a sub set of the activities.
         for (int i = 0; i < collapsedActivityCount; i++) {
-            Entry activity = dataModel.getEntry(i);
-            subMenu.add(0, i, i, activity.getLabel())
-                .setIcon(activity.getIcon())
+            Entry entry = dataModel.getEntry(i);
+            subMenu.add(0, i, i, entry.getLabel())
                 .setOnMenuItemClickListener(mOnMenuItemClickListener);
+            Drawable entryIcon = entry.getIcon();
+            if (entryIcon != null)
+            {
+                subMenu.setIcon(entryIcon);
+            }
         }
 
         if (collapsedActivityCount < expandedActivityCount) {

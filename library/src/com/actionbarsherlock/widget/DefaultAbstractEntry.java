@@ -25,6 +25,15 @@ public abstract class DefaultAbstractEntry implements Entry
         this.weight = weight;
     }
 
+    @Override
+    public String getIconUrl() {
+        return null;
+    }
+
+    @Override
+    public int getFallbackIconResId() {
+        return 0;
+    }
 
     @Override
     public int hashCode() {

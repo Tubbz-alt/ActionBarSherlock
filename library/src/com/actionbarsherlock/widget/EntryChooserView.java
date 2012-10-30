@@ -41,6 +41,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import com.androidquery.AQuery;
 
 /**
  * This class is a view for choosing an activity for handling a given {@link Intent}.
@@ -182,6 +183,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private int mDefaultActionButtonContentDescription;
 
     private final Context mContext;
+    private AQuery aQuery;
 
     /**
      * Create a new instance.
@@ -212,6 +214,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     public EntryChooserView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         mContext = context;
+        aQuery = new AQuery(mContext);
 
         TypedArray attributesArray = context.obtainStyledAttributes(attrs,
                 R.styleable.SherlockActivityChooserView, defStyle, 0);
@@ -513,11 +516,11 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         final int historySize = mAdapter.getHistorySize();
         if (activityCount > 0 && historySize > 0) {
             mDefaultActivityButton.setVisibility(VISIBLE);
-            Entry activity = mAdapter.getDefaultActivity();
-            PackageManager packageManager = mContext.getPackageManager();
-            mDefaultActivityButtonImage.setImageDrawable(activity.getIcon());
+            Entry entry = mAdapter.getDefaultActivity();
+            loadIconForEntry(mDefaultActivityButtonImage, entry);
+
             if (mDefaultActionButtonContentDescription != 0) {
-                CharSequence label = activity.getLabel();
+                CharSequence label = entry.getLabel();
                 String contentDescription = mContext.getString(
                         mDefaultActionButtonContentDescription, label);
                 mDefaultActivityButton.setContentDescription(contentDescription);
@@ -531,6 +534,16 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         } else {
             mActivityChooserContent.setBackgroundDrawable(null);
             mActivityChooserContent.setPadding(0, 0, 0, 0);
+        }
+    }
+
+    private void loadIconForEntry(ImageView iconView, Entry entry) {
+        Drawable icon = entry.getIcon();
+        String iconUrl = entry.getIconUrl();
+        if (icon != null) {
+            iconView.setImageDrawable(icon);
+        } else if (iconUrl != null) {
+            aQuery.id(iconView).image(iconUrl, true, true, 0, entry.getFallbackIconResId());
         }
     }
 
@@ -733,11 +746,11 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
                     PackageManager packageManager = mContext.getPackageManager();
                     // Set the icon
                     ImageView iconView = (ImageView) convertView.findViewById(R.id.abs__icon);
-                    Entry activity = (Entry) getItem(position);
-                    iconView.setImageDrawable(activity.getIcon());
+                    Entry entry = (Entry) getItem(position);
+                    loadIconForEntry(iconView, entry);
                     // Set the title.
                     TextView titleView = (TextView) convertView.findViewById(R.id.abs__title);
-                    titleView.setText(activity.getLabel());
+                    titleView.setText(entry.getLabel());
                     if (IS_HONEYCOMB) {
                         // Highlight the default.
                         if (mShowDefaultActivity && position == 0 && mHighlightDefaultActivity) {

@@ -127,6 +127,11 @@ public class PrependedItemsOnTopComparatorTest {
             }
 
             @Override
+            public String getIconUrl() {
+                return null;
+            }
+
+            @Override
             public Drawable getIcon() {
                 return null;
             }
@@ -134,6 +139,11 @@ public class PrependedItemsOnTopComparatorTest {
             @Override
             public Intent getIntent() {
                 return null;
+            }
+
+            @Override
+            public int getFallbackIconResId() {
+                return 0;
             }
 
             @Override
