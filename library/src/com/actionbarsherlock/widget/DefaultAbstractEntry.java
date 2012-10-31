@@ -36,6 +36,11 @@ public abstract class DefaultAbstractEntry implements Entry
     }
 
     @Override
+    public String getSubLabel() {
+        return null;
+    }
+
+    @Override
     public int hashCode() {
         return hasher.computeHashCode();
     }

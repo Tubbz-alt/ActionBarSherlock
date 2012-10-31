@@ -37,16 +37,37 @@
             android:layout_marginRight="8dip"
             android:duplicateParentState="true" />
 
-        <TextView
-            android:id="@+id/abs__title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:textAppearance="?attr/textAppearanceLargePopupMenu"
-            android:duplicateParentState="true"
-            android:singleLine="true"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal" />
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:duplicateParentState="true"
+                android:layout_gravity="center_vertical">
+
+                <TextView
+                        android:id="@+id/abs__title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:textAppearance="?attr/textAppearanceLargePopupMenu"
+                        android:duplicateParentState="true"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:fadingEdge="horizontal" />
+
+                <TextView
+                        android:id="@+id/abs__subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:textAppearance="?attr/subtitleTextStyle"
+                        android:duplicateParentState="true"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:visibility="gone"
+                        android:fadingEdge="horizontal" />
+
+         </LinearLayout>
 
     </LinearLayout>
 

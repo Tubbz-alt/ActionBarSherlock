@@ -147,6 +147,11 @@ public class PrependedItemsOnTopComparatorTest {
             }
 
             @Override
+            public String getSubLabel() {
+                return null;
+            }
+
+            @Override
             public int compareTo(Entry entry) {
                 return hasherAndComparator.compareToEntry(entry);
             }

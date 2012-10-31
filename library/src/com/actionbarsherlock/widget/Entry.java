@@ -40,4 +40,11 @@ public interface Entry extends Comparable<Entry> {
      */
     @Nonnegative
     int getFallbackIconResId();
+
+    /**
+     * If this method returns a string, the entry will have two lines and this string will be the subtitle.
+     * @return Null to have one line entry, or a string to be displayed as the second line.
+     */
+    @Nullable
+    String getSubLabel();
 }

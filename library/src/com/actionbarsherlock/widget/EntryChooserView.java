@@ -751,6 +751,15 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
                     // Set the title.
                     TextView titleView = (TextView) convertView.findViewById(R.id.abs__title);
                     titleView.setText(entry.getLabel());
+                    // Set the subtitle (if available)
+                    String subLabel = entry.getSubLabel();
+                    if (subLabel != null)
+                    {
+                        TextView subtitleView = (TextView) convertView.findViewById(R.id.abs__subtitle);
+                        subtitleView.setVisibility(View.VISIBLE);
+                        subtitleView.setText(subLabel);
+                    }
+
                     if (IS_HONEYCOMB) {
                         // Highlight the default.
                         if (mShowDefaultActivity && position == 0 && mHighlightDefaultActivity) {
