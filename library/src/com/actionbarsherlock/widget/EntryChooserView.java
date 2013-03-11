@@ -727,6 +727,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         public View getView(int position, View convertView, ViewGroup parent) {
             final int itemViewType = getItemViewType(position);
+            clearSubtitleText(convertView);
             switch (itemViewType) {
                 case ITEM_VIEW_TYPE_FOOTER:
                     if (convertView == null || convertView.getId() != ITEM_VIEW_TYPE_FOOTER) {
@@ -771,6 +772,18 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
                     return convertView;
                 default:
                     throw new IllegalArgumentException();
+            }
+        }
+
+        private void clearSubtitleText(View convertView) {
+            if (convertView != null)
+            {
+                TextView subTitle = (TextView) convertView.findViewById(R.id.abs__subtitle);
+                if (subTitle != null)
+                {
+                    subTitle.setText("");
+                    subTitle.setVisibility(View.GONE);
+                }
             }
         }
 
