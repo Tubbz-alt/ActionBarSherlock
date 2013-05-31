@@ -70,7 +70,7 @@
 		<android.platform>17</android.platform>
 		<android-support.version>11</android-support.version>
 
-		<android-maven.version>3.5.0</android-maven.version>
+		<android-maven.version>3.6.0</android-maven.version>
 		<junit.version>4.10</junit.version>
 
 		<github.downloads.repositoryOwner>shazam</github.downloads.repositoryOwner>
