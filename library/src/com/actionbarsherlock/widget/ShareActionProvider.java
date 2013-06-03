@@ -22,7 +22,6 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.util.TypedValue;
 import android.view.View;
-
 import com.actionbarsherlock.R;
 import com.actionbarsherlock.view.ActionProvider;
 import com.actionbarsherlock.view.Menu;
@@ -70,6 +69,10 @@ import com.actionbarsherlock.view.SubMenu;
  * @see ActionProvider
  */
 public class ShareActionProvider extends ActionProvider {
+
+    private static final int NOT_DEFINED = -1;
+    private EntryChooserView activityChooserView;
+    private int viewId = NOT_DEFINED;
 
     /**
      * Listener for the event of selecting a share target.
@@ -159,8 +162,11 @@ public class ShareActionProvider extends ActionProvider {
     public View onCreateActionView() {
         // Create the view and set its data model.
         EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
-        EntryChooserView activityChooserView = new EntryChooserView(mContext);
+        activityChooserView = new EntryChooserView(mContext);
         activityChooserView.setEntryChooserModel(dataModel);
+        if (viewId != NOT_DEFINED) {
+            activityChooserView.setId(viewId);
+        }
 
         // Lookup and set the expand action icon.
         TypedValue outTypedValue = new TypedValue();
@@ -292,6 +298,18 @@ public class ShareActionProvider extends ActionProvider {
     {
         EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
         dataModel.setAdditionalEntries(customEntries);
+    }
+
+    /**
+     * Call this method to set the id of the internal share view. This will only work if called both before AND after
+     * the view has been created.
+     * @param viewId The id for the view
+     */
+    public void setActionViewId(int viewId) {
+        this.viewId = viewId;
+        if (activityChooserView != null) {
+            activityChooserView.setId(viewId);
+        }
     }
 
 
