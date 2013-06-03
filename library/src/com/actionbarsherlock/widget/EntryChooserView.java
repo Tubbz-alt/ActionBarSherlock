@@ -16,12 +16,6 @@
 
 package com.actionbarsherlock.widget;
 
-import android.os.Build;
-import com.actionbarsherlock.R;
-import com.actionbarsherlock.internal.widget.IcsLinearLayout;
-import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
-import com.actionbarsherlock.view.ActionProvider;
-import com.actionbarsherlock.widget.EntryChooserModel.EntryChooserModelClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -29,6 +23,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.DataSetObserver;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -41,6 +36,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import com.actionbarsherlock.R;
+import com.actionbarsherlock.internal.widget.IcsLinearLayout;
+import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
+import com.actionbarsherlock.view.ActionProvider;
+import com.actionbarsherlock.widget.EntryChooserModel.EntryChooserModelClient;
 import com.androidquery.AQuery;
 
 /**
@@ -184,6 +184,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
     private final Context mContext;
     private AQuery aQuery;
+    private boolean mostCommonItemEnabled = true;
 
     /**
      * Create a new instance.
@@ -514,7 +515,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         // Default activity button.
         final int activityCount = mAdapter.getActivityCount();
         final int historySize = mAdapter.getHistorySize();
-        if (activityCount > 0 && historySize > 0) {
+        if (activityCount > 0 && historySize > 0 && mostCommonItemEnabled) {
             mDefaultActivityButton.setVisibility(VISIBLE);
             Entry entry = mAdapter.getDefaultActivity();
             loadIconForEntry(mDefaultActivityButtonImage, entry);
@@ -545,6 +546,11 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         } else if (iconUrl != null) {
             aQuery.id(iconView).image(iconUrl, true, true, 0, entry.getFallbackIconResId());
         }
+    }
+
+    public void setMostCommonItemEnabled(boolean mostCommonItemEnabled) {
+        this.mostCommonItemEnabled = mostCommonItemEnabled;
+        updateAppearance();
     }
 
     /**

@@ -73,6 +73,7 @@ public class ShareActionProvider extends ActionProvider {
     private static final int NOT_DEFINED = -1;
     private EntryChooserView activityChooserView;
     private int viewId = NOT_DEFINED;
+    private boolean mostCommonItemEnabled = true;
 
     /**
      * Listener for the event of selecting a share target.
@@ -167,6 +168,7 @@ public class ShareActionProvider extends ActionProvider {
         if (viewId != NOT_DEFINED) {
             activityChooserView.setId(viewId);
         }
+        activityChooserView.setMostCommonItemEnabled(mostCommonItemEnabled);
 
         // Lookup and set the expand action icon.
         TypedValue outTypedValue = new TypedValue();
@@ -309,6 +311,17 @@ public class ShareActionProvider extends ActionProvider {
         this.viewId = viewId;
         if (activityChooserView != null) {
             activityChooserView.setId(viewId);
+        }
+    }
+
+    /**
+     * Disables or enables most common item visibility on the share view,
+     * @param mostCommonItemEnabled visibility of the most common item selected.
+     */
+    public void setMostCommonItemEnabled(boolean mostCommonItemEnabled) {
+        this.mostCommonItemEnabled = mostCommonItemEnabled;
+        if (activityChooserView != null) {
+            activityChooserView.setMostCommonItemEnabled(mostCommonItemEnabled);
         }
     }
 
