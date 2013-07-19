@@ -961,30 +961,13 @@ class EntryChooserModel extends DataSetObservable {
                     nextRecordWeight = nextRecordWeight * WEIGHT_DECAY_COEFFICIENT;
                 }
             }
-
-//            Collections.sort(entries);
-//            float largeWeight = Float.MAX_VALUE;
-//            Entry firstEntry = null;
-//            if (entries.size() > 0)
-//            {
-//                firstEntry = entries.get(0);
-//                firstEntry.setWeight(largeWeight);
-//                largeWeight--;
-//            }
-//            for (Entry prependedEntry : prependedEntries)
-//            {
-//                // yes, we need reference equality here. If it is the first entry, it will have already had its weight
-//                // set.
-//                if (prependedEntry != firstEntry)
-//                {
-//                    prependedEntry.setWeight(largeWeight);
-//                    largeWeight--;
-//                }
-//            }
-
-            entries.removeAll(prependedEntries);
-            float largestWeightOfNormalEntries = PrependedItemsOnTopComparator.findLargestWeightOf(entries);
-            entries.addAll(prependedEntries);
+            List<Entry> normalEntries = new ArrayList<Entry>();
+            for(Entry entry : entries) {
+            	if(isPrepended(entry)) {
+            		normalEntries.add(entry);
+            	}
+            }
+            float largestWeightOfNormalEntries = PrependedItemsOnTopComparator.findLargestWeightOf(normalEntries);
             Collections.sort(entries, new PrependedItemsOnTopComparator(largestWeightOfNormalEntries, prependedEntries));
 
             if (DEBUG) {
@@ -993,6 +976,17 @@ class EntryChooserModel extends DataSetObservable {
                 }
             }
         }
+
+		private boolean isPrepended(Entry entry) {
+			boolean result = false;
+			for (Entry predendedEntry : prependedEntries) {
+				if (predendedEntry.getIdentifier()
+						.equals(entry.getIdentifier())) {
+					result = true;
+				}
+			}
+			return result;
+		}
     }
 
     /**
