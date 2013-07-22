@@ -18,10 +18,11 @@ package com.actionbarsherlock.widget;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.View.OnClickListener;
+
 import com.actionbarsherlock.R;
 import com.actionbarsherlock.view.ActionProvider;
 import com.actionbarsherlock.view.Menu;
@@ -104,7 +105,7 @@ public class ShareActionProvider extends ActionProvider {
     /**
      * The the maximum number activities shown in the sub-menu.
      */
-    private int mMaxShownActivityCount = DEFAULT_INITIAL_ACTIVITY_COUNT;
+    private final int mMaxShownActivityCount = DEFAULT_INITIAL_ACTIVITY_COUNT;
 
     /**
      * Listener for handling menu item clicks.
@@ -130,6 +131,11 @@ public class ShareActionProvider extends ActionProvider {
     private OnShareTargetSelectedListener mOnShareTargetSelectedListener;
 
     private EntryChooserModel.OnChooseEntryListener mOnChooseEntryListener;
+	private OnClickListener dropDownListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+		}
+	};
 
     /**
      * Creates a new instance.
@@ -164,6 +170,8 @@ public class ShareActionProvider extends ActionProvider {
         // Create the view and set its data model.
         EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
         activityChooserView = new EntryChooserView(mContext);
+        activityChooserView.setOnDropDownListener(dropDownListener);
+
         activityChooserView.setEntryChooserModel(dataModel);
         if (viewId != NOT_DEFINED) {
             activityChooserView.setId(viewId);
@@ -182,6 +190,7 @@ public class ShareActionProvider extends ActionProvider {
                 R.string.abs__shareactionprovider_share_with_application);
         activityChooserView.setExpandActivityOverflowButtonContentDescription(
                 R.string.abs__shareactionprovider_share_with);
+
 
         return activityChooserView;
     }
@@ -203,8 +212,6 @@ public class ShareActionProvider extends ActionProvider {
         subMenu.clear();
 
         EntryChooserModel dataModel = EntryChooserModel.get(mContext, mShareHistoryFileName);
-        PackageManager packageManager = mContext.getPackageManager();
-
         final int expandedActivityCount = dataModel.getEntryCount();
         final int collapsedActivityCount = Math.min(expandedActivityCount, mMaxShownActivityCount);
 
@@ -214,8 +221,7 @@ public class ShareActionProvider extends ActionProvider {
             subMenu.add(0, i, i, entry.getLabel())
                 .setOnMenuItemClickListener(mOnMenuItemClickListener);
             Drawable entryIcon = entry.getIcon();
-            if (entryIcon != null)
-            {
+            if (entryIcon != null) {
                 subMenu.setIcon(entryIcon);
             }
         }
@@ -325,6 +331,9 @@ public class ShareActionProvider extends ActionProvider {
         }
     }
 
+    public void setOnDropDownListener(View.OnClickListener dropDownListener) {
+    	this.dropDownListener = dropDownListener;
+    }
 
     /**
      * Reusable listener for handling share item clicks.
