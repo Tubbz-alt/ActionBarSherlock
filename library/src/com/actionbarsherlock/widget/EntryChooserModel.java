@@ -963,9 +963,9 @@ class EntryChooserModel extends DataSetObservable {
             }
             List<Entry> normalEntries = new ArrayList<Entry>();
             for(Entry entry : entries) {
-            	if(isPrepended(entry)) {
-            		normalEntries.add(entry);
-            	}
+                if(isPrepended(entry)) {
+                    normalEntries.add(entry);
+                }
             }
             float largestWeightOfNormalEntries = PrependedItemsOnTopComparator.findLargestWeightOf(normalEntries);
             Collections.sort(entries, new PrependedItemsOnTopComparator(largestWeightOfNormalEntries, prependedEntries));
@@ -977,16 +977,16 @@ class EntryChooserModel extends DataSetObservable {
             }
         }
 
-		private boolean isPrepended(Entry entry) {
-			boolean result = false;
-			for (Entry predendedEntry : prependedEntries) {
-				if (predendedEntry.getIdentifier()
-						.equals(entry.getIdentifier())) {
-					result = true;
-				}
-			}
-			return result;
-		}
+        private boolean isPrepended(Entry entry) {
+            boolean result = false;
+                for (Entry predendedEntry : prependedEntries) {
+                    if (predendedEntry.getIdentifier()
+                        .equals(entry.getIdentifier())) {
+                        result = true;
+                }
+            }
+            return result;
+        }
     }
 
     /**
