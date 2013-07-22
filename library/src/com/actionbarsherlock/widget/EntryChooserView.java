@@ -409,6 +409,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        dismissPopup();
         EntryChooserModel dataModel = mAdapter.getDataModel();
         if (dataModel != null) {
             try {
