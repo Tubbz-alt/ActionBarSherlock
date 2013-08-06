@@ -186,7 +186,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private AQuery aQuery;
     private boolean mostCommonItemEnabled = true;
 
-	private OnClickListener dropDownListener;
+    private OnClickListener dropDownListener;
 
     /**
      * Create a new instance.
@@ -555,15 +555,15 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         this.mostCommonItemEnabled = mostCommonItemEnabled;
         updateAppearance();
     }
-    
-    
+
+
     public void setOnDropDownListener(View.OnClickListener dropDownListener) {
-		this.dropDownListener = dropDownListener;
+      this.dropDownListener = dropDownListener;
     }
-    
+
     private void onDropDown(View view) {
-    	dropDownListener.onClick(view);
-	}
+      dropDownListener.onClick(view);
+    }
 
     /**
      * Interface implementation to avoid publishing them in the APIs.
@@ -620,7 +620,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
             }
         }
 
-		// OnLongClickListener#onLongClick
+        // OnLongClickListener#onLongClick
         @Override
         public boolean onLongClick(View view) {
             if (view == mDefaultActivityButton) {
