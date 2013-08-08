@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.shazam</groupId>
             <artifactId>aquery</artifactId>
-            <version>0.25.10</version>
+            <version>0.25.10-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
 
