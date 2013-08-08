@@ -36,6 +36,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+
 import com.actionbarsherlock.R;
 import com.actionbarsherlock.internal.widget.IcsLinearLayout;
 import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
@@ -183,7 +184,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private int mDefaultActionButtonContentDescription;
 
     private final Context mContext;
-    private AQuery aQuery;
+    private final AQuery aQuery;
     private boolean mostCommonItemEnabled = true;
 
     private OnClickListener dropDownListener;
@@ -267,7 +268,8 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     /**
      * {@inheritDoc}
      */
-    public void setEntryChooserModel(EntryChooserModel dataModel) {
+    @Override
+	public void setEntryChooserModel(EntryChooserModel dataModel) {
         mAdapter.setDataModel(dataModel);
         if (isShowingPopup()) {
             dismissPopup();
@@ -344,10 +346,10 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         final int activityCount = mAdapter.getActivityCount();
         final int maxActivityCountOffset = defaultActivityButtonShown ? 1 : 0;
-        if (maxActivityCount != ActivityChooserViewAdapter.MAX_ACTIVITY_COUNT_UNLIMITED
-                && activityCount > maxActivityCount + maxActivityCountOffset) {
+        if ((maxActivityCount != ActivityChooserViewAdapter.MAX_ACTIVITY_COUNT_UNLIMITED)
+                && (activityCount > (maxActivityCount + maxActivityCountOffset))) {
             mAdapter.setShowFooterView(true);
-            mAdapter.setMaxActivityCount(maxActivityCount - 1);
+            mAdapter.setMaxActivityCount(maxActivityCount);
         } else {
             mAdapter.setShowFooterView(false);
             mAdapter.setMaxActivityCount(maxActivityCount);
@@ -518,7 +520,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         // Default activity button.
         final int activityCount = mAdapter.getActivityCount();
         final int historySize = mAdapter.getHistorySize();
-        if (activityCount > 0 && historySize > 0 && mostCommonItemEnabled) {
+        if ((activityCount > 0) && (historySize > 0) && mostCommonItemEnabled) {
             mDefaultActivityButton.setVisibility(VISIBLE);
             Entry entry = mAdapter.getDefaultActivity();
             loadIconForEntry(mDefaultActivityButtonImage, entry);
@@ -572,7 +574,8 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
             View.OnClickListener, View.OnLongClickListener, PopupWindow.OnDismissListener {
 
         // AdapterView#OnItemClickListener
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        @Override
+		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             ActivityChooserViewAdapter adapter = (ActivityChooserViewAdapter) parent.getAdapter();
             final int itemViewType = adapter.getItemViewType(position);
             switch (itemViewType) {
@@ -602,7 +605,8 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         }
 
         // View.OnClickListener
-        public void onClick(View view) {
+        @Override
+		public void onClick(View view) {
             if (view == mDefaultActivityButton) {
                 dismissPopup();
                 Entry defaultActivity = mAdapter.getDefaultActivity();
@@ -635,7 +639,8 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         }
 
         // PopUpWindow.OnDismissListener#onDismiss
-        public void onDismiss() {
+        @Override
+		public void onDismiss() {
             notifyOnDismissListener();
             if (mProvider != null) {
                 mProvider.subUiVisibilityChanged(false);
@@ -684,7 +689,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         public void setDataModel(EntryChooserModel dataModel) {
             EntryChooserModel oldDataModel = mAdapter.getDataModel();
-            if (oldDataModel != null && isShown()) {
+            if ((oldDataModel != null) && isShown()) {
                 try {
                     oldDataModel.unregisterObserver(mModelDataSetOberver);
                 } catch (IllegalStateException e) {
@@ -692,7 +697,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
                 }
             }
             mDataModel = dataModel;
-            if (dataModel != null && isShown()) {
+            if ((dataModel != null) && isShown()) {
                 dataModel.registerObserver(mModelDataSetOberver);
             }
             notifyDataSetChanged();
@@ -700,7 +705,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         @Override
         public int getItemViewType(int position) {
-            if (mShowFooterView && position == getCount() - 1) {
+            if (mShowFooterView && (position == (getCount() - 1))) {
                 return ITEM_VIEW_TYPE_FOOTER;
             } else {
                 return ITEM_VIEW_TYPE_ACTIVITY;
@@ -712,26 +717,28 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
             return ITEM_VIEW_TYPE_COUNT;
         }
 
-        public int getCount() {
+        @Override
+		public int getCount() {
             int count = 0;
             int activityCount = mDataModel.getEntryCount();
-            if (!mShowDefaultActivity && mDataModel.getDefaultEntry() != null) {
+            if (!mShowDefaultActivity && (mDataModel.getDefaultEntry() != null)) {
                 activityCount--;
             }
             count = Math.min(activityCount, mMaxActivityCount);
-            if (mShowFooterView) {
+            if (mShowFooterView && (count < MAX_ACTIVITY_COUNT_DEFAULT)) {
                 count++;
             }
             return count;
         }
 
-        public Object getItem(int position) {
+        @Override
+		public Object getItem(int position) {
             final int itemViewType = getItemViewType(position);
             switch (itemViewType) {
                 case ITEM_VIEW_TYPE_FOOTER:
                     return null;
                 case ITEM_VIEW_TYPE_ACTIVITY:
-                    if (!mShowDefaultActivity && mDataModel.getDefaultEntry() != null) {
+                    if (!mShowDefaultActivity && (mDataModel.getDefaultEntry() != null)) {
                         position++;
                     }
                     return mDataModel.getEntry(position);
@@ -740,16 +747,18 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
             }
         }
 
-        public long getItemId(int position) {
+        @Override
+		public long getItemId(int position) {
             return position;
         }
 
-        public View getView(int position, View convertView, ViewGroup parent) {
+        @Override
+		public View getView(int position, View convertView, ViewGroup parent) {
             final int itemViewType = getItemViewType(position);
             clearSubtitleText(convertView);
             switch (itemViewType) {
                 case ITEM_VIEW_TYPE_FOOTER:
-                    if (convertView == null || convertView.getId() != ITEM_VIEW_TYPE_FOOTER) {
+                    if ((convertView == null) || (convertView.getId() != ITEM_VIEW_TYPE_FOOTER)) {
                         convertView = LayoutInflater.from(getContext()).inflate(
                                 R.layout.abs__activity_chooser_view_list_item, parent, false);
                         convertView.setId(ITEM_VIEW_TYPE_FOOTER);
@@ -759,7 +768,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
                     }
                     return convertView;
                 case ITEM_VIEW_TYPE_ACTIVITY:
-                    if (convertView == null || convertView.getId() != R.id.abs__list_item) {
+                    if ((convertView == null) || (convertView.getId() != R.id.abs__list_item)) {
                         convertView = LayoutInflater.from(getContext()).inflate(
                                 R.layout.abs__activity_chooser_view_list_item, parent, false);
                     }
@@ -782,7 +791,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
                     if (IS_HONEYCOMB) {
                         // Highlight the default.
-                        if (mShowDefaultActivity && position == 0 && mHighlightDefaultActivity) {
+                        if (mShowDefaultActivity && (position == 0) && mHighlightDefaultActivity) {
                             SetActivated.invoke(convertView, true);
                         } else {
                             SetActivated.invoke(convertView, false);
@@ -866,8 +875,8 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         public void setShowDefaultActivity(boolean showDefaultActivity,
                 boolean highlightDefaultActivity) {
-            if (mShowDefaultActivity != showDefaultActivity
-                    || mHighlightDefaultActivity != highlightDefaultActivity) {
+            if ((mShowDefaultActivity != showDefaultActivity)
+                    || (mHighlightDefaultActivity != highlightDefaultActivity)) {
                 mShowDefaultActivity = showDefaultActivity;
                 mHighlightDefaultActivity = highlightDefaultActivity;
                 notifyDataSetChanged();
