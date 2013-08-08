@@ -131,11 +131,11 @@ public class ShareActionProvider extends ActionProvider {
     private OnShareTargetSelectedListener mOnShareTargetSelectedListener;
 
     private EntryChooserModel.OnChooseEntryListener mOnChooseEntryListener;
-	private OnClickListener dropDownListener = new OnClickListener() {
-		@Override
-		public void onClick(View v) {
-		}
-	};
+    private OnClickListener dropDownListener = new OnClickListener() {
+      @Override
+      public void onClick(View v) {
+      }
+    };
 
     /**
      * Creates a new instance.
@@ -332,7 +332,7 @@ public class ShareActionProvider extends ActionProvider {
     }
 
     public void setOnDropDownListener(View.OnClickListener dropDownListener) {
-    	this.dropDownListener = dropDownListener;
+      this.dropDownListener = dropDownListener;
     }
 
     /**
