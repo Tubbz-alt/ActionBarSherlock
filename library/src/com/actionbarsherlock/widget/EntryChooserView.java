@@ -36,13 +36,14 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-
 import com.actionbarsherlock.R;
+import com.actionbarsherlock.internal.NoOpWarningImageLoader;
 import com.actionbarsherlock.internal.widget.IcsLinearLayout;
 import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
 import com.actionbarsherlock.view.ActionProvider;
 import com.actionbarsherlock.widget.EntryChooserModel.EntryChooserModelClient;
-import com.androidquery.AQuery;
+import com.webimageloader.ImageLoader;
+import com.webimageloader.ext.ImageHelper;
 
 /**
  * This class is a view for choosing an activity for handling a given {@link Intent}.
@@ -184,10 +185,10 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private int mDefaultActionButtonContentDescription;
 
     private final Context mContext;
-    private final AQuery aQuery;
     private boolean mostCommonItemEnabled = true;
 
-    private OnClickListener dropDownListener;
+    private OnClickListener dropDownListener;;
+    private ImageHelper imageHelper;
 
     /**
      * Create a new instance.
@@ -218,7 +219,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     public EntryChooserView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         mContext = context;
-        aQuery = new AQuery(mContext);
+        imageHelper = new ImageHelper(mContext, new NoOpWarningImageLoader());
 
         TypedArray attributesArray = context.obtainStyledAttributes(attrs,
                 R.styleable.SherlockActivityChooserView, defStyle, 0);
@@ -549,7 +550,9 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         if (icon != null) {
             iconView.setImageDrawable(icon);
         } else if (iconUrl != null) {
-            aQuery.id(iconView).image(iconUrl, true, true, 0, entry.getFallbackIconResId());
+            imageHelper
+                    .setErrorResource(entry.getFallbackIconResId())
+                    .load(iconView, iconUrl);
         }
     }
 
@@ -565,6 +568,10 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
     private void onDropDown(View view) {
       dropDownListener.onClick(view);
+    }
+
+    public void setImageLoader(ImageLoader imageLoader) {
+        imageHelper = new ImageHelper(getContext(), imageLoader);
     }
 
     /**

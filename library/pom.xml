@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>com.shazam</groupId>
 		<artifactId>actionbarsherlock-parent</artifactId>
-		<version>4.2.2-SNAPSHOT</version>
+		<version>4.2.3-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -31,10 +31,9 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.shazam</groupId>
-            <artifactId>aquery</artifactId>
-            <version>0.25.10-SNAPSHOT</version>
-            <type>jar</type>
+            <groupId>com.webimageloader</groupId>
+            <artifactId>webimageloader</artifactId>
+            <version>1.2.0</version>
         </dependency>
 
 		<dependency>
