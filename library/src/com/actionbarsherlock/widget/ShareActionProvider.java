@@ -28,7 +28,6 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.actionbarsherlock.view.MenuItem.OnMenuItemClickListener;
 import com.actionbarsherlock.view.SubMenu;
-import com.webimageloader.ImageLoader;
 
 /**
  * This is a provider for a share action. It is responsible for creating views
@@ -75,7 +74,6 @@ public class ShareActionProvider extends ActionProvider {
     private EntryChooserView activityChooserView;
     private int viewId = NOT_DEFINED;
     private boolean mostCommonItemEnabled = true;
-    private ImageLoader imageLoader;
 
     /**
      * Listener for the event of selecting a share target.
@@ -178,7 +176,6 @@ public class ShareActionProvider extends ActionProvider {
             activityChooserView.setId(viewId);
         }
         activityChooserView.setMostCommonItemEnabled(mostCommonItemEnabled);
-        activityChooserView.setImageLoader(imageLoader);
 
         // Lookup and set the expand action icon.
         TypedValue outTypedValue = new TypedValue();
@@ -335,13 +332,6 @@ public class ShareActionProvider extends ActionProvider {
 
     public void setOnDropDownListener(View.OnClickListener dropDownListener) {
       this.dropDownListener = dropDownListener;
-    }
-
-    public void setImageLoader(ImageLoader imageLoader) {
-        this.imageLoader = imageLoader;
-        if (activityChooserView != null) {
-            activityChooserView.setImageLoader(imageLoader);
-        }
     }
 
     /**

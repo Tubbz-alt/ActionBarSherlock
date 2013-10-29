@@ -37,13 +37,12 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import com.actionbarsherlock.R;
-import com.actionbarsherlock.internal.NoOpWarningImageLoader;
 import com.actionbarsherlock.internal.widget.IcsLinearLayout;
 import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
 import com.actionbarsherlock.view.ActionProvider;
 import com.actionbarsherlock.widget.EntryChooserModel.EntryChooserModelClient;
-import com.webimageloader.ImageLoader;
-import com.webimageloader.ext.ImageHelper;
+import com.squareup.picasso.Cache;
+import com.squareup.picasso.Picasso;
 
 /**
  * This class is a view for choosing an activity for handling a given {@link Intent}.
@@ -187,8 +186,8 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private final Context mContext;
     private boolean mostCommonItemEnabled = true;
 
-    private OnClickListener dropDownListener;;
-    private ImageHelper imageHelper;
+    private OnClickListener dropDownListener;
+    private Picasso picasso;
 
     /**
      * Create a new instance.
@@ -219,7 +218,9 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     public EntryChooserView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         mContext = context;
-        imageHelper = new ImageHelper(mContext, new NoOpWarningImageLoader());
+        picasso = new Picasso.Builder(context)
+                .memoryCache(Cache.NONE)
+                .build();
 
         TypedArray attributesArray = context.obtainStyledAttributes(attrs,
                 R.styleable.SherlockActivityChooserView, defStyle, 0);
@@ -262,8 +263,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         });
 
         Resources resources = context.getResources();
-        mListPopupMaxWidth = Math.max(resources.getDisplayMetrics().widthPixels / 2,
-              resources.getDimensionPixelSize(R.dimen.abs__config_prefDialogWidth));
+        mListPopupMaxWidth = Math.max(resources.getDisplayMetrics().widthPixels / 2, resources.getDimensionPixelSize(R.dimen.abs__config_prefDialogWidth));
     }
 
     /**
@@ -550,9 +550,9 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         if (icon != null) {
             iconView.setImageDrawable(icon);
         } else if (iconUrl != null) {
-            imageHelper
-                    .setErrorResource(entry.getFallbackIconResId())
-                    .load(iconView, iconUrl);
+            picasso.load(iconUrl)
+                    .error(entry.getFallbackIconResId())
+                    .into(iconView);
         }
     }
 
@@ -568,10 +568,6 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
     private void onDropDown(View view) {
       dropDownListener.onClick(view);
-    }
-
-    public void setImageLoader(ImageLoader imageLoader) {
-        imageHelper = new ImageHelper(getContext(), imageLoader);
     }
 
     /**

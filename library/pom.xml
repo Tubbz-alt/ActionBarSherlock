@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>com.shazam</groupId>
 		<artifactId>actionbarsherlock-parent</artifactId>
-		<version>4.2.4-SNAPSHOT</version>
+		<version>4.2.5-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -31,9 +31,9 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.shazam</groupId>
-            <artifactId>webimageloader</artifactId>
-            <version>1.2.2-SNAPSHOT</version>
+            <groupId>com.squareup.picasso</groupId>
+            <artifactId>picasso</artifactId>
+            <version>2.1.1</version>
         </dependency>
 
 		<dependency>
