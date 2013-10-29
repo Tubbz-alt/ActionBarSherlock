@@ -41,8 +41,6 @@ import com.actionbarsherlock.internal.widget.IcsLinearLayout;
 import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
 import com.actionbarsherlock.view.ActionProvider;
 import com.actionbarsherlock.widget.EntryChooserModel.EntryChooserModelClient;
-import com.squareup.picasso.Cache;
-import com.squareup.picasso.Picasso;
 
 /**
  * This class is a view for choosing an activity for handling a given {@link Intent}.
@@ -187,7 +185,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private boolean mostCommonItemEnabled = true;
 
     private OnClickListener dropDownListener;
-    private Picasso picasso;
+    private ImageViewLoader imageViewLoader = ImageViewLoader.NO_OP;
 
     /**
      * Create a new instance.
@@ -218,9 +216,6 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     public EntryChooserView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         mContext = context;
-        picasso = new Picasso.Builder(context)
-                .memoryCache(Cache.NONE)
-                .build();
 
         TypedArray attributesArray = context.obtainStyledAttributes(attrs,
                 R.styleable.SherlockActivityChooserView, defStyle, 0);
@@ -550,10 +545,12 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         if (icon != null) {
             iconView.setImageDrawable(icon);
         } else if (iconUrl != null) {
-            picasso.load(iconUrl)
-                    .error(entry.getFallbackIconResId())
-                    .into(iconView);
+            imageViewLoader.loadImageView(iconView, iconUrl, entry.getFallbackIconResId());
         }
+    }
+
+    public void setImageViewLoader(ImageViewLoader imageViewLoader) {
+        this.imageViewLoader = imageViewLoader;
     }
 
     public void setMostCommonItemEnabled(boolean mostCommonItemEnabled) {

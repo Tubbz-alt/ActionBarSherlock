@@ -74,6 +74,7 @@ public class ShareActionProvider extends ActionProvider {
     private EntryChooserView activityChooserView;
     private int viewId = NOT_DEFINED;
     private boolean mostCommonItemEnabled = true;
+    private ImageViewLoader imageViewLoader = ImageViewLoader.NO_OP;
 
     /**
      * Listener for the event of selecting a share target.
@@ -190,8 +191,16 @@ public class ShareActionProvider extends ActionProvider {
         activityChooserView.setExpandActivityOverflowButtonContentDescription(
                 R.string.abs__shareactionprovider_share_with);
 
+        activityChooserView.setImageViewLoader(imageViewLoader);
 
         return activityChooserView;
+    }
+
+    public void setImageViewLoader(ImageViewLoader imageViewLoader) {
+        this.imageViewLoader = imageViewLoader;
+        if (activityChooserView != null) {
+            activityChooserView.setImageViewLoader(imageViewLoader);
+        }
     }
 
     /**
