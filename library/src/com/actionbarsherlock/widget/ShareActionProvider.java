@@ -191,16 +191,7 @@ public class ShareActionProvider extends ActionProvider {
         activityChooserView.setExpandActivityOverflowButtonContentDescription(
                 R.string.abs__shareactionprovider_share_with);
 
-        activityChooserView.setImageViewLoader(imageViewLoader);
-
         return activityChooserView;
-    }
-
-    public void setImageViewLoader(ImageViewLoader imageViewLoader) {
-        this.imageViewLoader = imageViewLoader;
-        if (activityChooserView != null) {
-            activityChooserView.setImageViewLoader(imageViewLoader);
-        }
     }
 
     /**

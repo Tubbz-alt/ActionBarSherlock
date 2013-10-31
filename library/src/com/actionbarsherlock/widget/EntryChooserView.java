@@ -185,7 +185,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     private boolean mostCommonItemEnabled = true;
 
     private OnClickListener dropDownListener;
-    private ImageViewLoader imageViewLoader = ImageViewLoader.NO_OP;
+    private ImageViewLoader imageViewLoader = ImageViewLoader.NO_OP_WARNING;
 
     /**
      * Create a new instance.
@@ -216,6 +216,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
     public EntryChooserView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         mContext = context;
+        getImageViewLoaderAsService(context);
 
         TypedArray attributesArray = context.obtainStyledAttributes(attrs,
                 R.styleable.SherlockActivityChooserView, defStyle, 0);
@@ -259,6 +260,13 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         Resources resources = context.getResources();
         mListPopupMaxWidth = Math.max(resources.getDisplayMetrics().widthPixels / 2, resources.getDimensionPixelSize(R.dimen.abs__config_prefDialogWidth));
+    }
+
+    private void getImageViewLoaderAsService(Context context) {
+        final Object imageViewLoaderService = context.getApplicationContext().getSystemService(ImageViewLoader.class.getCanonicalName());
+        if (imageViewLoaderService != null && imageViewLoaderService instanceof ImageViewLoader) {
+            imageViewLoader = (ImageViewLoader) imageViewLoaderService;
+        }
     }
 
     /**
@@ -547,10 +555,6 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         } else if (iconUrl != null) {
             imageViewLoader.loadImageView(iconView, iconUrl, entry.getFallbackIconResId());
         }
-    }
-
-    public void setImageViewLoader(ImageViewLoader imageViewLoader) {
-        this.imageViewLoader = imageViewLoader;
     }
 
     public void setMostCommonItemEnabled(boolean mostCommonItemEnabled) {
