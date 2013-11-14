@@ -273,7 +273,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
      * {@inheritDoc}
      */
     @Override
-	public void setEntryChooserModel(EntryChooserModel dataModel) {
+    public void setEntryChooserModel(EntryChooserModel dataModel) {
         mAdapter.setDataModel(dataModel);
         if (isShowingPopup()) {
             dismissPopup();
@@ -579,7 +579,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         // AdapterView#OnItemClickListener
         @Override
-		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             ActivityChooserViewAdapter adapter = (ActivityChooserViewAdapter) parent.getAdapter();
             final int itemViewType = adapter.getItemViewType(position);
             switch (itemViewType) {
@@ -610,7 +610,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         // View.OnClickListener
         @Override
-		public void onClick(View view) {
+        public void onClick(View view) {
             if (view == mDefaultActivityButton) {
                 dismissPopup();
                 Entry defaultActivity = mAdapter.getDefaultActivity();
@@ -644,7 +644,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
 
         // PopUpWindow.OnDismissListener#onDismiss
         @Override
-		public void onDismiss() {
+        public void onDismiss() {
             notifyOnDismissListener();
             if (mProvider != null) {
                 mProvider.subUiVisibilityChanged(false);
@@ -722,7 +722,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         }
 
         @Override
-		public int getCount() {
+        public int getCount() {
             int count = 0;
             int activityCount = mDataModel.getEntryCount();
             if (!mShowDefaultActivity && (mDataModel.getDefaultEntry() != null)) {
@@ -736,7 +736,7 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         }
 
         @Override
-		public Object getItem(int position) {
+        public Object getItem(int position) {
             final int itemViewType = getItemViewType(position);
             switch (itemViewType) {
                 case ITEM_VIEW_TYPE_FOOTER:
@@ -752,12 +752,12 @@ class EntryChooserView extends ViewGroup implements EntryChooserModelClient
         }
 
         @Override
-		public long getItemId(int position) {
+        public long getItemId(int position) {
             return position;
         }
 
         @Override
-		public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(int position, View convertView, ViewGroup parent) {
             final int itemViewType = getItemViewType(position);
             clearSubtitleText(convertView);
             switch (itemViewType) {
