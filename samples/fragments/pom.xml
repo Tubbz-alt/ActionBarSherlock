@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>com.shazam</groupId>
 		<artifactId>parent-sample</artifactId>
-		<version>4.2.6-SNAPSHOT</version>
+		<version>4.2.6.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
