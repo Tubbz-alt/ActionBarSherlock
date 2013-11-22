@@ -20,6 +20,10 @@ target
 release.properties
 pom.xml.*
 
+# Gradle
+.gradle
+build
+
 #Ant
 build.xml
 ant.properties

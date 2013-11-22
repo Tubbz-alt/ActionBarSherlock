@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>com.shazam</groupId>
 		<artifactId>actionbarsherlock-parent</artifactId>
-		<version>4.2.6.1</version>
+		<version>4.2.6.2-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
