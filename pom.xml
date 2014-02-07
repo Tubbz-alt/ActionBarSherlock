@@ -12,7 +12,7 @@
 	<groupId>com.shazam</groupId>
 	<artifactId>actionbarsherlock-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>4.2.6.1</version>
+	<version>4.2.6.2</version>
 
 	<name>ActionBarSherlock (Parent)</name>
 	<description>Android library for implementing the action bar design pattern using the backported sources of Ice Cream Sandwich.</description>
@@ -21,7 +21,6 @@
 
 	<modules>
 		<module>library</module>
-		<module>samples</module>
 	</modules>
 
 	<scm>
@@ -68,7 +67,7 @@
 		<java.version>1.6</java.version>
 		<android.version>4.2_r1</android.version>
 		<android.platform>17</android.platform>
-		<android-support.version>r13</android-support.version>
+		<android-support.version>19.0.1</android-support.version>
 
 		<android-maven.version>3.6.0</android-maven.version>
 		<junit.version>4.10</junit.version>
@@ -85,7 +84,7 @@
 				<version>${android.version}</version>
 			</dependency>
             <dependency>
-              <groupId>com.google.android</groupId>
+              <groupId>com.android.support</groupId>
               <artifactId>support-v4</artifactId>
               <version>${android-support.version}</version>
             </dependency>
